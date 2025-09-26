@@ -1,0 +1,188 @@
+{
+  "pipedream_configuration": {
+    "workflow_name": "Day Trade Content Generator",
+    "description": "Sistema automatizado para gerar conteúdo educativo sobre day trade e mercado financeiro",
+    "schedule": {
+      "type": "cron",
+      "expression": "0 */4 * * *",
+      "timezone": "America/Sao_Paulo",
+      "description": "Executa a cada 4 horas"
+    },
+    "environment_variables": {
+      "OPENAI_API_KEY": {
+        "description": "Chave da API OpenAI para geração de texto",
+        "required": true,
+        "example": "sk-..."
+      },
+      "GOOGLE_DRIVE_FOLDER_ID": {
+        "description": "ID da pasta principal no Google Drive",
+        "required": true,
+        "example": "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms"
+      },
+      "POLLINATIONS_API_URL": {
+        "description": "URL base da API Pollinations (gratuita)",
+        "required": false,
+        "default": "https://image.pollinations.ai/prompt/"
+      }
+    },
+    "api_connections": {
+      "openai": {
+        "service": "OpenAI",
+        "purpose": "Geração de roteiros e prompts para imagens",
+        "cost": "~$0.002 por request",
+        "rate_limit": "60 requests/minuto"
+      },
+      "google_drive": {
+        "service": "Google Drive",
+        "purpose": "Upload e organização de arquivos gerados",
+        "cost": "Gratuito até 15GB",
+        "rate_limit": "1000 requests/100 segundos"
+      },
+      "pollinations": {
+        "service": "Pollinations AI",
+        "purpose": "Geração gratuita de imagens",
+        "cost": "Gratuito",
+        "rate_limit": "Sem limite específico"
+      }
+    },
+    "workflow_steps": [
+      {
+        "step": 1,
+        "name": "Schedule Trigger",
+        "description": "Dispara o workflow a cada 4 horas",
+        "type": "trigger"
+      },
+      {
+        "step": 2,
+        "name": "Setup Variables",
+        "description": "Define configurações e variáveis do workflow",
+        "type": "code"
+      },
+      {
+        "step": 3,
+        "name": "Generate Script",
+        "description": "Gera roteiro educativo sobre day trade usando OpenAI",
+        "type": "api_call",
+        "api": "openai"
+      },
+      {
+        "step": 4,
+        "name": "Clean Script",
+        "description": "Remove caracteres especiais e formata o texto",
+        "type": "code"
+      },
+      {
+        "step": 5,
+        "name": "Generate Image Prompts",
+        "description": "Cria prompts para imagens baseados no roteiro",
+        "type": "api_call",
+        "api": "openai"
+      },
+      {
+        "step": 6,
+        "name": "Process Prompts",
+        "description": "Processa e formata os prompts de imagem",
+        "type": "code"
+      },
+      {
+        "step": 7,
+        "name": "Generate Images",
+        "description": "Gera imagens usando Pollinations AI",
+        "type": "api_call",
+        "api": "pollinations"
+      },
+      {
+        "step": 8,
+        "name": "Upload to Google Drive",
+        "description": "Faz upload das imagens para o Google Drive",
+        "type": "api_call",
+        "api": "google_drive"
+      },
+      {
+        "step": 9,
+        "name": "Final Result",
+        "description": "Organiza dados finais e metadados",
+        "type": "code"
+      }
+    ],
+    "output_format": {
+      "script": {
+        "type": "string",
+        "max_length": 500,
+        "language": "portuguese",
+        "topic": "day_trade_education"
+      },
+      "images": {
+        "count": 3,
+        "format": "jpg",
+        "size": "1024x1024",
+        "style": "professional_financial"
+      },
+      "metadata": {
+        "timestamp": "ISO 8601",
+        "prompts_used": "array",
+        "drive_file_ids": "array"
+      }
+    },
+    "error_handling": {
+      "retry_attempts": 3,
+      "retry_delay": "5 seconds",
+      "fallback_prompts": true,
+      "notification_email": "opcional"
+    },
+    "monitoring": {
+      "success_rate_target": "95%",
+      "average_execution_time": "< 60 seconds",
+      "monthly_executions": 180,
+      "estimated_cost": "$0.36/month"
+    }
+  },
+  "setup_instructions": {
+    "step_1": {
+      "title": "Criar conta no Pipedream",
+      "url": "https://pipedream.com/auth/signup",
+      "description": "Crie uma conta gratuita no Pipedream"
+    },
+    "step_2": {
+      "title": "Obter API Keys",
+      "openai": "https://platform.openai.com/api-keys",
+      "description": "Configure suas chaves de API"
+    },
+    "step_3": {
+      "title": "Configurar Google Drive",
+      "description": "Configure acesso ao Google Drive e obtenha o ID da pasta"
+    },
+    "step_4": {
+      "title": "Importar Workflow",
+      "description": "Importe o arquivo day_trade_content_generator_free.json"
+    },
+    "step_5": {
+      "title": "Configurar Variáveis",
+      "description": "Configure as variáveis de ambiente no workflow"
+    },
+    "step_6": {
+      "title": "Testar e Ativar",
+      "description": "Teste o workflow e ative o agendamento"
+    }
+  },
+  "troubleshooting": {
+    "common_issues": {
+      "openai_quota_exceeded": {
+        "error": "OpenAI API quota exceeded",
+        "solution": "Verifique sua cota na OpenAI ou reduza a frequência"
+      },
+      "google_drive_permission": {
+        "error": "Google Drive permission denied",
+        "solution": "Reautorize a conexão com Google Drive"
+      },
+      "pollinations_timeout": {
+        "error": "Pollinations API timeout",
+        "solution": "Simplifique os prompts ou adicione retry"
+      },
+      "workflow_not_running": {
+        "error": "Workflow não executa no horário",
+        "solution": "Verifique se está ativo e o timezone está correto"
+      }
+    }
+  }
+}

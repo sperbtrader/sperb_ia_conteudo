@@ -1,0 +1,347 @@
+{
+  "name": "Gerador de Conteúdo sobre Day Trade",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "value": 4
+            }
+          ]
+        }
+      },
+      "name": "Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1200,
+        -200
+      ],
+      "id": "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "g_googledrive_dir",
+              "value": "ID_DA_SUA_PASTA_NO_GOOGLE_DRIVE"
+            },
+            {
+              "name": "g_qtdimagens",
+              "value": "3"
+            }
+          ]
+        }
+      },
+      "name": "SETUP",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -1000,
+        -200
+      ],
+      "id": "b2c3d4e5-f6a7-8901-2345-67890abcdef1"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Você é um especialista em mercado financeiro e day trade. Sua tarefa é criar um roteiro para um vídeo curto (Reels/Shorts) sobre um dos seguintes tópicos: estratégia de day trade, aula sobre um indicador de mercado, ou uma dica prática para iniciantes. O conteúdo deve ser educativo, direto ao ponto e com uma linguagem acessível. Varie os tópicos para manter o conteúdo diversificado. O roteiro deve ter no máximo 500 caracteres.",
+              "role": "system"
+            },
+            {
+              "content": "Crie um roteiro sobre um dos seguintes temas: (1) Estratégia de Scalping para mini-índice, (2) Como usar o indicador MACD para identificar tendências, (3) A importância do Stop Loss no day trade. Escolha um tema e desenvolva o roteiro.",
+              "role": "user"
+            }
+          ]
+        }
+      },
+      "name": "ROTEIRO",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -800,
+        -200
+      ],
+      "id": "c3d4e5f6-a7b8-9012-3456-7890abcdef12"
+    },
+    {
+      "parameters": {
+        "jsCode": "let texto =  $input.first().json.output || '';\n\n// Remove aspas externas se houver\ntexto = texto.replace(/^\"(.*)\"$/, '$1');\n\n// Remove quebras de linha e múltiplos espaços\ntexto = texto.replace(/[\\r\\n]+/g, ' ');           // quebra de linha → espaço\ntexto = texto.replace(/\\s\\s+/g, ' ');             // múltiplos espaços → um espaço\n\n// Remove espaços no início e fim\ntexto = texto.trim();\n\n// Remove caracteres de controle invisíveis (exceto espaço normal)\ntexto = texto.replace(/[\\u0000-\\u001F\\u007F]+/g, '');\n\nreturn [\n  {\n    json: {\n      roteiro: texto\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -600,
+        -200
+      ],
+      "id": "d4e5f6a7-b8c9-0123-4567-890abcdef123",
+      "name": "Remove caracteres especiais"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Você é um diretor de arte especializado em criar imagens para conteúdo de mercado financeiro. Seu trabalho é extrair prompts visuais de roteiros para criar cenas que ilustrem conceitos de day trade, estratégias e indicadores. As imagens devem ser limpas, modernas e com um toque corporativo, usando uma paleta de cores que remeta a finanças (azul, verde, dourado, preto e branco). O resultado final deve ser um JSON com os prompts.",
+              "role": "system"
+            },
+            {
+              "content": "A partir do roteiro a seguir, extraia {{ $item(\"0\").$node[\"SETUP\"].json[\"g_qtdimagens\"] }} prompts em inglês para gerar imagens. Cada imagem deve representar um momento chave do roteiro, em ordem cronológica. Os prompts devem ser detalhados, com 1-2 sentenças, e não devem conter texto. O roteiro é: {{ $item(\"0\").$node[\"Remove caracteres especiais\"].json[\"roteiro\"] }}',
+              "role": "user"
+            }
+          ]
+        }
+      },
+      "name": "Gera os prompts das imagens",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -400,
+        -200
+      ],
+      "id": "e5f6a7b8-c9d0-1234-5678-90abcdef1234"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.replicate.com/v1/models/stability-ai/stable-diffusion:db21e45d3f7023abc2a46ee38a23973f6dce16bb082a930b0c49861f96d1e5bf/predictions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer SEU_REPLICATE_API_TOKEN"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"input\":{\"prompt\":\"{{ $json.prompt }}\"}}",
+        "options": {}
+      },
+      "name": "Gerar imagem",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -200,
+        -200
+      ],
+      "id": "f6a7b8c9-d0e1-2345-6789-0abcdef12345"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Gerar imagem').item.json.urls.get }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer SEU_REPLICATE_API_TOKEN"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Pega status da imagem",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        -200
+      ],
+      "id": "0abcdef1-2345-6789-0123-456789abcdef"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "succeeded",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "name": "Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        200,
+        -200
+      ],
+      "id": "12345678-90ab-cdef-0123-456789abcdef0"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.output[0] }}",
+        "responseFormat": "file",
+        "options": {}
+      },
+      "name": "Download Imagem",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        400,
+        -200
+      ],
+      "id": "23456789-0abc-def0-1234-56789abcdef01"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "upload",
+        "driveId": {
+          "__rl": true,
+          "value": "={{ $item(\"0\").$node[\"SETUP\"].json[\"g_googledrive_dir\"] }}",
+          "mode": "id"
+        },
+        "binaryData": true,
+        "options": {}
+      },
+      "name": "Upload Google Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        600,
+        -200
+      ],
+      "id": "34567890-abcd-ef01-2345-6789abcdef012"
+    }
+  ],
+  "connections": {
+    "Schedule": {
+      "main": [
+        [
+          {
+            "node": "SETUP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SETUP": {
+      "main": [
+        [
+          {
+            "node": "ROTEIRO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ROTEIRO": {
+      "main": [
+        [
+          {
+            "node": "Remove caracteres especiais",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove caracteres especiais": {
+      "main": [
+        [
+          {
+            "node": "Gera os prompts das imagens",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gera os prompts das imagens": {
+      "main": [
+        [
+          {
+            "node": "Gerar imagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gerar imagem": {
+      "main": [
+        [
+          {
+            "node": "Pega status da imagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pega status da imagem": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Download Imagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Imagem": {
+      "main": [
+        [
+          {
+            "node": "Upload Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

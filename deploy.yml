@@ -1,0 +1,80 @@
+name: Deploy Day Trade Content Generator
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Executa a cada 6 horas para manter o serviço ativo
+    - cron: '0 */6 * * *'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v3
+      with:
+        python-version: 3.11
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Run tests
+      run: |
+        python -c "import day_trade_generator_free; print('✅ Import test passed')"
+        python -c "import automation_scheduler; print('✅ Scheduler test passed')"
+    
+    - name: Validate JSON files
+      run: |
+        python -c "import json; json.load(open('day_trade_content_generator_free.json')); print('✅ JSON validation passed')"
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Deploy to Railway
+      uses: railway-app/railway-deploy-action@v1
+      with:
+        railway_token: ${{ secrets.RAILWAY_TOKEN }}
+        service: day-trade-generator
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        GOOGLE_DRIVE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
+    
+    - name: Health Check
+      run: |
+        sleep 30  # Aguarda deploy
+        curl -f ${{ secrets.RAILWAY_URL }}/health || exit 1
+    
+    - name: Notify Success
+      if: success()
+      run: |
+        echo "✅ Deploy realizado com sucesso!"
+        echo "🔗 URL: ${{ secrets.RAILWAY_URL }}"
+    
+    - name: Notify Failure
+      if: failure()
+      run: |
+        echo "❌ Deploy falhou!"
+        echo "Verifique os logs para mais detalhes."
+
+  keep-alive:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    
+    steps:
+    - name: Keep Service Alive
+      run: |
+        curl -f ${{ secrets.RAILWAY_URL }}/health
+        echo "✅ Keep-alive ping enviado"

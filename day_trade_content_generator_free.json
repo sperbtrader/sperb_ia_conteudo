@@ -1,0 +1,301 @@
+{
+  "name": "Gerador de Conteúdo sobre Day Trade - Versão Gratuita",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "value": 4
+            }
+          ]
+        }
+      },
+      "name": "Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1200,
+        -200
+      ],
+      "id": "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "g_googledrive_dir",
+              "value": "ID_DA_SUA_PASTA_NO_GOOGLE_DRIVE"
+            },
+            {
+              "name": "g_qtdimagens",
+              "value": "3"
+            },
+            {
+              "name": "pollinations_api_url",
+              "value": "https://image.pollinations.ai/prompt/"
+            }
+          ]
+        }
+      },
+      "name": "SETUP",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -1000,
+        -200
+      ],
+      "id": "b2c3d4e5-f6a7-8901-2345-67890abcdef1"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Você é um especialista em mercado financeiro e day trade. Sua tarefa é criar um roteiro para um vídeo curto (Reels/Shorts) sobre um dos seguintes tópicos: estratégia de day trade, aula sobre um indicador de mercado, ou uma dica prática para iniciantes. O conteúdo deve ser educativo, direto ao ponto e com uma linguagem acessível. Varie os tópicos para manter o conteúdo diversificado. O roteiro deve ter no máximo 500 caracteres e focar em conceitos que podem ser ilustrados visualmente.",
+              "role": "system"
+            },
+            {
+              "content": "Crie um roteiro sobre um dos seguintes temas: (1) Estratégia de Scalping para mini-índice, (2) Como usar o indicador MACD para identificar tendências, (3) A importância do Stop Loss no day trade, (4) Análise de suporte e resistência, (5) Padrões de candlestick. Escolha um tema aleatório e desenvolva o roteiro.",
+              "role": "user"
+            }
+          ]
+        }
+      },
+      "name": "ROTEIRO",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -800,
+        -200
+      ],
+      "id": "c3d4e5f6-a7b8-9012-3456-7890abcdef12"
+    },
+    {
+      "parameters": {
+        "jsCode": "let texto = $input.first().json.message?.content || $input.first().json.output || '';\n\n// Remove aspas externas se houver\ntexto = texto.replace(/^\"(.*)\"$/, '$1');\n\n// Remove quebras de linha e múltiplos espaços\ntexto = texto.replace(/[\\r\\n]+/g, ' ');\ntexto = texto.replace(/\\s\\s+/g, ' ');\n\n// Remove espaços no início e fim\ntexto = texto.trim();\n\n// Remove caracteres de controle invisíveis\ntexto = texto.replace(/[\\u0000-\\u001F\\u007F]+/g, '');\n\nreturn [\n  {\n    json: {\n      roteiro: texto\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -600,
+        -200
+      ],
+      "id": "d4e5f6a7-b8c9-0123-4567-890abcdef123",
+      "name": "Limpar Roteiro"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Você é um diretor de arte especializado em criar prompts para imagens de mercado financeiro. Seu trabalho é extrair prompts visuais de roteiros para criar cenas que ilustrem conceitos de day trade, estratégias e indicadores. As imagens devem ser limpas, modernas e com um toque corporativo, usando uma paleta de cores que remeta a finanças (azul, verde, dourado, preto e branco). Retorne apenas um JSON válido com os prompts.",
+              "role": "system"
+            },
+            {
+              "content": "A partir do roteiro sobre day trade: '{{ $('Limpar Roteiro').item.json.roteiro }}', crie {{ $('SETUP').item.json.g_qtdimagens }} prompts em inglês para gerar imagens. Cada prompt deve ter 1-2 sentenças, ser detalhado, incluir elementos como gráficos, candlesticks, setas de tendência, e não conter texto. Retorne no formato JSON: {\"image_prompts\": [{\"prompt\": \"prompt_1\", \"image\": \"image_1\"}, {\"prompt\": \"prompt_2\", \"image\": \"image_2\"}, {\"prompt\": \"prompt_3\", \"image\": \"image_3\"}]}",
+              "role": "user"
+            }
+          ]
+        }
+      },
+      "name": "Gerar Prompts",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -400,
+        -200
+      ],
+      "id": "e5f6a7b8-c9d0-1234-5678-90abcdef1234"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nlet content = input.message?.content || input.output || '';\n\n// Limpa o JSON\ncontent = content.replace(/```json/g, '').replace(/```/g, '').trim();\n\ntry {\n  const parsed = JSON.parse(content);\n  \n  // Retorna cada prompt como um item separado\n  return parsed.image_prompts.map((item, index) => ({\n    json: {\n      ...item,\n      index: index + 1,\n      enhanced_prompt: `${item.prompt}, professional financial trading concept, clean modern design, corporate style, high quality, detailed`\n    }\n  }));\n} catch (error) {\n  // Fallback com prompts padrão\n  const fallbackPrompts = [\n    {\n      prompt: \"Professional financial trading concept, modern stock market chart with candlesticks, blue and green color scheme, corporate style, clean design\",\n      image: \"image_1\"\n    },\n    {\n      prompt: \"Trading indicators dashboard, MACD and RSI charts, professional financial interface, blue corporate colors, modern design\",\n      image: \"image_2\"\n    },\n    {\n      prompt: \"Day trading workspace, multiple monitors with financial charts, professional trader setup, clean modern office, blue lighting\",\n      image: \"image_3\"\n    }\n  ];\n  \n  return fallbackPrompts.map((item, index) => ({\n    json: {\n      ...item,\n      index: index + 1,\n      enhanced_prompt: `${item.prompt}, professional financial trading concept, clean modern design, corporate style, high quality, detailed`\n    }\n  }));\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -200,
+        -200
+      ],
+      "id": "f6a7b8c9-d0e1-2345-6789-0abcdef12345",
+      "name": "Processar Prompts"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('SETUP').item.json.pollinations_api_url }}{{ encodeURIComponent($json.enhanced_prompt) }}?width=1024&height=1024&model=flux&enhance=true",
+        "responseFormat": "file",
+        "options": {}
+      },
+      "name": "Gerar Imagem Pollinations",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        -200
+      ],
+      "id": "0abcdef1-2345-6789-0123-456789abcdef"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "upload",
+        "driveId": {
+          "__rl": true,
+          "value": "={{ $('SETUP').item.json.g_googledrive_dir }}",
+          "mode": "id"
+        },
+        "name": "=day_trade_{{ $json.image }}_{{ $now.format('YYYY-MM-DD_HH-mm-ss') }}.jpg",
+        "binaryData": true,
+        "options": {}
+      },
+      "name": "Upload Google Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        200,
+        -200
+      ],
+      "id": "12345678-90ab-cdef-0123-456789abcdef0"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "roteiro",
+              "value": "={{ $('Limpar Roteiro').item.json.roteiro }}"
+            },
+            {
+              "name": "prompt_usado",
+              "value": "={{ $json.prompt }}"
+            },
+            {
+              "name": "arquivo_imagem",
+              "value": "={{ $json.name }}"
+            },
+            {
+              "name": "drive_file_id",
+              "value": "={{ $json.id }}"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{ $now.format('YYYY-MM-DD HH:mm:ss') }}"
+            }
+          ]
+        }
+      },
+      "name": "Resultado Final",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        400,
+        -200
+      ],
+      "id": "23456789-0abc-def0-1234-56789abcdef01"
+    }
+  ],
+  "connections": {
+    "Schedule": {
+      "main": [
+        [
+          {
+            "node": "SETUP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SETUP": {
+      "main": [
+        [
+          {
+            "node": "ROTEIRO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ROTEIRO": {
+      "main": [
+        [
+          {
+            "node": "Limpar Roteiro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpar Roteiro": {
+      "main": [
+        [
+          {
+            "node": "Gerar Prompts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gerar Prompts": {
+      "main": [
+        [
+          {
+            "node": "Processar Prompts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Processar Prompts": {
+      "main": [
+        [
+          {
+            "node": "Gerar Imagem Pollinations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gerar Imagem Pollinations": {
+      "main": [
+        [
+          {
+            "node": "Upload Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Google Drive": {
+      "main": [
+        [
+          {
+            "node": "Resultado Final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

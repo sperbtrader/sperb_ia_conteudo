@@ -1,0 +1,110 @@
+{
+  "google_drive_config": {
+    "main_folder": {
+      "name": "Day Trade Content Generator",
+      "description": "Pasta principal para conteúdo automatizado de day trade",
+      "id": "SUBSTITUA_PELO_ID_DA_SUA_PASTA"
+    },
+    "subfolders": {
+      "videos": {
+        "name": "videos",
+        "description": "Vídeos finalizados organizados por data",
+        "auto_organize": true,
+        "structure": "YYYY/MM/"
+      },
+      "imagens": {
+        "name": "imagens", 
+        "description": "Imagens geradas automaticamente",
+        "auto_organize": true,
+        "naming_pattern": "day_trade_image_{timestamp}.jpg"
+      },
+      "roteiros": {
+        "name": "roteiros",
+        "description": "Scripts e roteiros em formato JSON",
+        "auto_organize": true,
+        "naming_pattern": "roteiro_{timestamp}.json"
+      },
+      "assets": {
+        "name": "assets",
+        "description": "Recursos reutilizáveis (logos, fontes, templates)",
+        "auto_organize": false
+      },
+      "publicacoes": {
+        "name": "publicacoes",
+        "description": "Controle e histórico de publicações",
+        "auto_organize": false
+      }
+    },
+    "permissions": {
+      "read": true,
+      "write": true,
+      "create_folders": true,
+      "share": false
+    },
+    "automation_settings": {
+      "auto_cleanup": {
+        "enabled": true,
+        "days_to_keep": 30,
+        "archive_folder": "arquivo"
+      },
+      "backup": {
+        "enabled": true,
+        "frequency": "weekly",
+        "backup_folder": "backup"
+      },
+      "monitoring": {
+        "enabled": true,
+        "log_folder": "logs",
+        "alert_email": "seu@email.com"
+      }
+    },
+    "api_settings": {
+      "credentials_file": "google_drive_credentials.json",
+      "scopes": [
+        "https://www.googleapis.com/auth/drive.file",
+        "https://www.googleapis.com/auth/drive.metadata"
+      ],
+      "rate_limits": {
+        "requests_per_second": 10,
+        "requests_per_day": 20000
+      }
+    }
+  },
+  "content_settings": {
+    "image_format": "jpg",
+    "image_quality": 85,
+    "image_size": {
+      "width": 1024,
+      "height": 1024
+    },
+    "naming_conventions": {
+      "images": "day_trade_img_{index}_{timestamp}",
+      "scripts": "roteiro_{timestamp}",
+      "videos": "video_{topic}_{timestamp}"
+    },
+    "metadata": {
+      "include_timestamp": true,
+      "include_prompts": true,
+      "include_performance": true
+    }
+  },
+  "social_media_integration": {
+    "platforms": {
+      "instagram": {
+        "enabled": false,
+        "format": "1080x1080",
+        "hashtags": "#daytrade #mercadofinanceiro #investimentos #trading"
+      },
+      "tiktok": {
+        "enabled": false,
+        "format": "1080x1920",
+        "hashtags": "#daytrade #trading #dinheiro #investir"
+      },
+      "youtube": {
+        "enabled": false,
+        "format": "1080x1920",
+        "title_template": "{topic} - Day Trade Explicado"
+      }
+    }
+  }
+}

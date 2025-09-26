@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  day-trade-generator:
+    build: .
+    container_name: day-trade-content-generator
+    restart: unless-stopped
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GOOGLE_DRIVE_FOLDER_ID=${GOOGLE_DRIVE_FOLDER_ID}
+      - CONTENT_GENERATION_INTERVAL=4
+      - LOG_LEVEL=INFO
+      - TZ=America/Sao_Paulo
+    volumes:
+      - ./generated_content:/app/generated_content
+      - ./logs:/app/logs
+      - ./google_drive_credentials.json:/app/google_drive_credentials.json:ro
+    networks:
+      - day-trade-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Opcional: Webhook receiver para triggers externos
+  webhook-receiver:
+    build: .
+    container_name: day-trade-webhook
+    restart: unless-stopped
+    command: ["python", "webhook_server.py"]
+    ports:
+      - "8000:8000"
+    environment:
+      - WEBHOOK_SECRET=${WEBHOOK_SECRET:-default_secret}
+    networks:
+      - day-trade-network
+    depends_on:
+      - day-trade-generator
+
+networks:
+  day-trade-network:
+    driver: bridge
+
+volumes:
+  generated_content:
+  logs:
